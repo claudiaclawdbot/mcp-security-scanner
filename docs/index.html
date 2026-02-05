@@ -57,41 +57,41 @@
 
   <div class="section">
     <h2>📊 MCP Server Security Leaderboard</h2>
-    <p style="color: #888; margin-bottom: 1rem;">Scanned Feb 5, 2026. Static analysis + metadata checks. Lower score = more secure.</p>
+    <p style="color: #888; margin-bottom: 1rem;">Scanned Feb 5, 2026. Production code only (test files excluded). Lower score = more secure.</p>
     <table>
-      <tr><th>Server</th><th>Stars</th><th>Files</th><th>Risk Score</th><th>Findings</th><th>Status</th></tr>
+      <tr><th>Server</th><th>Stars</th><th>Risk Score</th><th>Findings</th><th>Status</th></tr>
       <tr>
         <td><a href="https://github.com/firecrawl/firecrawl-mcp-server">firecrawl-mcp</a></td>
-        <td>5.4K</td><td>4</td>
+        <td>5.4K</td>
         <td class="risk-low">3/100</td><td>1</td>
-        <td><span class="badge badge-low">LOW</span></td>
+        <td><span class="badge badge-low">LOW ✅</span></td>
       </tr>
       <tr>
         <td><a href="https://github.com/github/github-mcp-server">github-mcp-server</a></td>
-        <td>26.7K</td><td>0 (Go)</td>
+        <td>26.7K</td>
         <td class="risk-low">6/100</td><td>2</td>
-        <td><span class="badge badge-low">LOW</span></td>
+        <td><span class="badge badge-low">LOW ✅</span></td>
       </tr>
       <tr>
         <td><a href="https://github.com/exa-labs/exa-mcp-server">exa-mcp-server</a></td>
-        <td>3.7K</td><td>17</td>
+        <td>3.7K</td>
         <td class="risk-low">23/100</td><td>6</td>
-        <td><span class="badge badge-low">LOW</span></td>
-      </tr>
-      <tr>
-        <td><a href="https://github.com/cloudflare/mcp-server-cloudflare">cloudflare-mcp</a></td>
-        <td>3.4K</td><td>221</td>
-        <td class="risk-critical">75/100</td><td>13</td>
-        <td><span class="badge badge-critical">CRITICAL</span></td>
+        <td><span class="badge badge-low">LOW ✅</span></td>
       </tr>
       <tr>
         <td><a href="https://github.com/makenotion/notion-mcp-server">notion-mcp-server</a></td>
-        <td>3.8K</td><td>19</td>
-        <td class="risk-critical">100/100</td><td>17</td>
-        <td><span class="badge badge-critical">CRITICAL</span></td>
+        <td>3.8K</td>
+        <td class="risk-medium">25/100</td><td>1</td>
+        <td><span class="badge" style="background:#ffcc0033;color:#ffcc00;">MEDIUM</span></td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/cloudflare/mcp-server-cloudflare">cloudflare-mcp</a></td>
+        <td>3.4K</td>
+        <td class="risk-critical">75/100</td><td>13</td>
+        <td><span class="badge badge-critical">CRITICAL ⚠️</span></td>
       </tr>
     </table>
-    <p style="color: #666; font-size: 0.85rem; margin-top: 0.5rem;">⚠️ High scores don't necessarily mean the server is malicious — they indicate patterns that warrant manual review. False positives are expected with static analysis.</p>
+    <p style="color: #666; font-size: 0.85rem; margin-top: 0.5rem;">⚠️ High scores indicate patterns worth reviewing, not necessarily malicious code. v1.1 excludes test files by default for more accurate results.</p>
   </div>
 
   <div class="section">

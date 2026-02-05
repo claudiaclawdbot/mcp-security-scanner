@@ -12,6 +12,7 @@ import { scanMetadata } from './modules/metadata.js';
 import { calculateRiskScore, getRiskLevel } from './utils/scoring.js';
 
 const SOURCE_EXTENSIONS = new Set(['.js', '.ts', '.mjs', '.cjs', '.jsx', '.tsx']);
+const TEST_PATTERNS = ['__tests__', '.test.', '.spec.', 'test/', 'tests/', 'fixtures/'];
 
 /**
  * Recursively discover source files
@@ -71,7 +72,7 @@ async function findPackageJson(targetPath) {
  * Main scanner orchestrator
  */
 export async function scanner(targetPath, options = {}) {
-  const { modules = ['static', 'deps', 'perms', 'meta'], verbose = false } = options;
+  const { modules = ['static', 'deps', 'perms', 'meta'], verbose = false, includeTests = false } = options;
   
   const startTime = Date.now();
   
@@ -83,9 +84,14 @@ export async function scanner(targetPath, options = {}) {
     findPackageJson(targetPath)
   ]);
   
-  if (verbose) console.log(`Found ${files.length} source files`);
+  // Filter test files unless explicitly included
+  const scanFiles = includeTests ? files : files.filter(f => 
+    !TEST_PATTERNS.some(p => f.relative.includes(p))
+  );
+  
+  if (verbose) console.log(`Found ${scanFiles.length} source files (${files.length - scanFiles.length} test files excluded)`);
 
-  const context = { targetPath, files, manifest, packageJson };
+  const context = { targetPath, files: scanFiles, manifest, packageJson };
   
   // Run scan modules in parallel
   const scanTasks = [];

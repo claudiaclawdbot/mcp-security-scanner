@@ -25,6 +25,7 @@ program
   .option('--ci', 'CI mode: exit 1 if findings above threshold')
   .option('--threshold <level>', 'CI threshold severity', 'high')
   .option('--no-color', 'Disable colored output')
+  .option('--include-tests', 'Include test files in scan')
   .option('--verbose', 'Show detailed progress')
   .action(async (target, opts) => {
     const targetPath = resolve(target);
@@ -37,6 +38,7 @@ program
       const results = await scanner(targetPath, {
         modules,
         verbose: opts.verbose,
+        includeTests: opts.includeTests,
         minSeverity: opts.severity
       });
 
