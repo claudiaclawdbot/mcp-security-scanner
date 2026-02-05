@@ -18,7 +18,8 @@ const PATTERNS = [
   {
     id: 'eval-usage',
     severity: 'critical',
-    pattern: /\b(eval|Function)\s*\(/g,
+    // Match eval/Function calls but not inside strings/comments
+    pattern: /(?<!['"`])(?<![/][/*].*)\b(eval|Function)\s*\(/g,
     message: 'Use of eval() or Function() constructor — potential code injection',
     remediation: 'Avoid eval/Function. Use JSON.parse() for data, or a sandboxed interpreter',
     cwe: 'CWE-95'
@@ -73,6 +74,17 @@ const PATTERNS = [
   }
 ];
 
+// Simple check: is this position inside a string literal?
+function isInString(content, position) {
+  let inSingle = false, inDouble = false, inBacktick = false;
+  for (let i = 0; i < position; i++) {
+    if (content[i] === "'" && content[i-1] !== '\\\\') inSingle = !inSingle;
+    if (content[i] === '"' && content[i-1] !== '\\\\') inDouble = !inDouble;
+    if (content[i] === '`' && content[i-1] !== '\\\\') inBacktick = !inBacktick;
+  }
+  return inSingle || inDouble || inBacktick;
+}
+
 export async function scanStatic(context) {
   const { files } = context;
   const findings = [];
@@ -88,6 +100,11 @@ export async function scanStatic(context) {
         let match;
 
         while ((match = rule.pattern.exec(content)) !== null) {
+          // Skip if inside string literal (reduces false positives)
+          if (rule.id === 'eval-usage' && isInString(content, match.index)) {
+            continue;
+          }
+
           // Find line number
           const beforeMatch = content.substring(0, match.index);
           const lineNum = beforeMatch.split('\n').length;
