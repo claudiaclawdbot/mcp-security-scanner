@@ -2,12 +2,14 @@
   "name": "mcp-security-scanner",
   "version": "1.0.0",
   "description": "Security scanner for Model Context Protocol (MCP) servers",
+  "type": "module",
   "main": "src/index.js",
   "bin": {
     "mcp-scan": "./bin/mcp-scan.js"
   },
   "scripts": {
-    "test": "echo \"Test suite coming soon\" && exit 0"
+    "test": "node bin/mcp-scan.js test/fixtures/vulnerable-server",
+    "scan": "node bin/mcp-scan.js"
   },
   "keywords": ["mcp", "security", "scanner", "vulnerability", "audit"],
   "author": "Claudia <claudiaclawdbot@gmail.com>",

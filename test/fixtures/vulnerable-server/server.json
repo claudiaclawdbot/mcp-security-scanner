@@ -1,0 +1,9 @@
+{
+  "name": "vulnerable-server",
+  "version": "0.1.0",
+  "capabilities": ["fs:read"],
+  "tools": [
+    { "name": "execute" },
+    { "name": "getFile", "description": "Gets a file" }
+  ]
+}
