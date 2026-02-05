@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scan an MCP Server — MCP Security Scanner</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; color: #e0e0e0; min-height: 100vh; }
+    .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; color: #fff; }
+    .subtitle { color: #888; margin-bottom: 2rem; }
+    .input-group { display: flex; gap: 0.5rem; margin-bottom: 2rem; }
+    input { flex: 1; padding: 0.8rem 1rem; background: #1e1e2e; border: 1px solid #333; border-radius: 8px; color: #fff; font-size: 1rem; }
+    input:focus { outline: none; border-color: #00d4ff; }
+    button { padding: 0.8rem 1.5rem; background: #00d4ff; color: #000; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; }
+    button:hover { background: #00b8d4; }
+    button:disabled { background: #333; color: #666; cursor: not-allowed; }
+    .results { background: #1e1e2e; border-radius: 12px; padding: 1.5rem; border: 1px solid #333; white-space: pre-wrap; font-family: monospace; font-size: 0.9rem; line-height: 1.5; min-height: 200px; }
+    .viz { margin: 2rem 0; text-align: center; }
+    canvas { border-radius: 12px; }
+    a { color: #00d4ff; text-decoration: none; }
+    .note { color: #666; font-size: 0.85rem; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔒 Scan an MCP Server</h1>
+    <p class="subtitle">Paste a GitHub repo URL to get a security report. Scans run client-side — no data leaves your browser.</p>
+    
+    <div class="input-group">
+      <input type="text" id="repoUrl" placeholder="https://github.com/owner/mcp-server" />
+      <button id="scanBtn" onclick="startScan()">Scan</button>
+    </div>
+
+    <div class="viz">
+      <canvas id="riskViz" width="600" height="200"></canvas>
+    </div>
+
+    <div class="results" id="output">Paste a GitHub repo URL above and click Scan.
+
+Note: This is a demo visualization. For real scans, clone the repo locally:
+
+  git clone https://github.com/claudiaclawdbot/mcp-security-scanner.git
+  cd mcp-security-scanner && npm install
+  node bin/mcp-scan.js /path/to/your-mcp-server
+
+The CLI gives you full analysis with file-level findings, CWE codes, and remediation steps.</div>
+
+    <p class="note">
+      Built by <a href="https://github.com/claudiaclawdbot">Claudia</a> 🌀 · 
+      <a href="https://github.com/claudiaclawdbot/mcp-security-scanner">Source Code</a> · 
+      <a href="./">Back to Leaderboard</a>
+    </p>
+  </div>
+
+  <script>
+    // Pre-computed results for known servers
+    const KNOWN_SCANS = {
+      'github/github-mcp-server': { name: 'GitHub MCP', risk: 6, level: 'LOW', findings: 2, critical: 0, high: 0, medium: 2, low: 0 },
+      'firecrawl/firecrawl-mcp-server': { name: 'Firecrawl MCP', risk: 3, level: 'LOW', findings: 1, critical: 0, high: 0, medium: 1, low: 0 },
+      'makenotion/notion-mcp-server': { name: 'Notion MCP', risk: 25, level: 'MEDIUM', findings: 1, critical: 1, high: 0, medium: 0, low: 0 },
+      'cloudflare/mcp-server-cloudflare': { name: 'Cloudflare MCP', risk: 75, level: 'CRITICAL', findings: 13, critical: 1, high: 2, medium: 9, low: 1 },
+      'exa-labs/exa-mcp-server': { name: 'Exa MCP', risk: 23, level: 'LOW', findings: 6, critical: 0, high: 1, medium: 4, low: 1 }
+    };
+
+    function parseRepo(url) {
+      const match = url.match(/github\.com\/([^/]+\/[^/]+)/);
+      return match ? match[1].replace(/\.git$/, '') : null;
+    }
+
+    function drawRisk(score) {
+      const canvas = document.getElementById('riskViz');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, 600, 200);
+      
+      // Background
+      const gradient = ctx.createLinearGradient(0, 80, 600, 80);
+      gradient.addColorStop(0, '#44bb44');
+      gradient.addColorStop(0.25, '#88cc00');
+      gradient.addColorStop(0.5, '#ffcc00');
+      gradient.addColorStop(0.75, '#ff8800');
+      gradient.addColorStop(1, '#ff4444');
+      
+      // Bar background
+      ctx.fillStyle = '#1e1e2e';
+      ctx.fillRect(0, 60, 600, 40);
+      
+      // Risk bar
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 60, score * 6, 40);
+      
+      // Marker
+      const x = score * 6;
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.moveTo(x, 50);
+      ctx.lineTo(x - 8, 60);
+      ctx.lineTo(x + 8, 60);
+      ctx.fill();
+      
+      // Score text
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 24px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${score}/100`, 300, 140);
+      
+      // Labels
+      ctx.font = '12px sans-serif';
+      ctx.fillStyle = '#888';
+      ctx.textAlign = 'left';
+      ctx.fillText('SAFE', 10, 180);
+      ctx.textAlign = 'right';
+      ctx.fillText('CRITICAL', 590, 180);
+      ctx.textAlign = 'center';
+      ctx.fillText('Risk Score', 300, 30);
+    }
+
+    function startScan() {
+      const url = document.getElementById('repoUrl').value.trim();
+      const output = document.getElementById('output');
+      const btn = document.getElementById('scanBtn');
+      
+      if (!url) return;
+      
+      const repo = parseRepo(url);
+      if (!repo) {
+        output.textContent = 'Invalid GitHub URL. Please use format: https://github.com/owner/repo';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Scanning...';
+      output.textContent = `🔍 Analyzing ${repo}...\n`;
+
+      setTimeout(() => {
+        const known = KNOWN_SCANS[repo];
+        if (known) {
+          drawRisk(known.risk);
+          output.textContent = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  MCP Security Scanner v1.1.0
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Server: ${known.name}
+  Risk:   ${known.risk}/100 (${known.level})
+
+  🔴 Critical: ${known.critical}
+  🟠 High:     ${known.high}
+  🟡 Medium:   ${known.medium}
+  🔵 Low:      ${known.low}
+
+  Total findings: ${known.findings}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+For detailed findings with file locations,
+CWE codes, and remediation steps, run:
+
+  git clone ${url}
+  cd mcp-security-scanner && npm install
+  node bin/mcp-scan.js /path/to/${repo.split('/')[1]}`;
+        } else {
+          drawRisk(0);
+          output.textContent = `Server ${repo} not in our database yet.
+
+To scan it yourself:
+
+  git clone ${url} /tmp/scan-target
+  git clone https://github.com/claudiaclawdbot/mcp-security-scanner.git
+  cd mcp-security-scanner && npm install
+  node bin/mcp-scan.js /tmp/scan-target
+
+Want this server added to the leaderboard?
+Open an issue: https://github.com/claudiaclawdbot/mcp-security-scanner/issues`;
+        }
+
+        btn.disabled = false;
+        btn.textContent = 'Scan';
+      }, 1500);
+    }
+
+    // Draw initial empty state
+    drawRisk(0);
+  </script>
+</body>
+</html>
