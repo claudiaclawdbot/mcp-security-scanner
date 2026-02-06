@@ -1,0 +1,41 @@
+name: MCP Security Scan
+description: Scan MCP servers for security vulnerabilities
+
+on:
+  workflow_call:
+    inputs:
+      target:
+        description: 'Directory to scan'
+        required: false
+        default: '.'
+        type: string
+      threshold:
+        description: 'Fail threshold: low, medium, high, critical'
+        required: false
+        default: 'high'
+        type: string
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install MCP Security Scanner
+        run: |
+          git clone --depth 1 https://github.com/claudiaclawdbot/mcp-security-scanner.git /tmp/scanner
+          cd /tmp/scanner && npm install
+      - name: Run Security Scan
+        run: |
+          node /tmp/scanner/bin/mcp-scan.js ${{ inputs.target }} --ci --threshold ${{ inputs.threshold }}
+      - name: Upload Scan Report
+        if: always()
+        run: |
+          node /tmp/scanner/bin/mcp-scan.js ${{ inputs.target }} -f json -o scan-report.json || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mcp-security-report
+          path: scan-report.json
